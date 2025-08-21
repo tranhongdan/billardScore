@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Billiard Score App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #2b6cb0;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+        .container {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-grow: 1;
+        }
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            position: relative;
+        }
+
+        /* Responsive layout for landscape mode */
+        @media (min-width: 600px) {
+            body {
+                flex-direction: column;
+                justify-content: center;
+            }
+            .main-content {
+                flex-direction: row;
+                justify-content: center;
+                gap: 2rem;
+            }
+            .button-container {
+                flex-direction: row;
+                margin-top: 2rem;
+            }
+        }
+
+        .score-section {
+            display: grid;
+            grid-template-rows: auto 1fr;
+            border: 2px solid #4a5568;
+            border-radius: 1rem;
+            overflow: hidden;
+            margin-bottom: 1rem;
+            background-color: #2d3748;
+            box-shadow: 4px 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            height: 300px;
+            position: relative;
+            flex-grow: 1;
+            transition: transform 0.3s ease-in-out;
+            transform: scale(0.9);
+            opacity: 0.8;
+        }
+        .score-section.active {
+            transform: scale(1.05);
+            border-color: #fca5a5;
+            box-shadow: 0 8px 10px rgba(0, 0, 0, 0.4);
+            opacity: 1;
+        }
+        .score-display {
+            font-size: 10rem;
+            font-weight: bold;
+            color: #ef4444;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+            z-index: 10;
+            pointer-events: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .name-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0 0.5rem;
+            background-color: #2d3748;
+            z-index: 20;
+        }
+        .name-input {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+            outline: none;
+            flex-grow: 1;
+            max-width: 15ch;
+            pointer-events: none;
+        }
+        .score-section.active .name-input {
+            pointer-events: auto;
+        }
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            position: absolute;
+            bottom: 0.5rem;
+            left: 0;
+            width: 100%;
+            z-index: 20;
+            padding: 0 0.5rem;
+        }
+        .stats {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #4a5568;
+            text-align: center;
+        }
+
+        /* Thêm hiệu ứng mới: zoom, đổi màu và lắc */
+        .stats.win-effect {
+            animation: win-effect-animation 3s forwards;
+        }
+
+        @keyframes win-effect-animation {
+            0% { transform: scale(1); color: #4a5568; }
+            5% { transform: scale(1.5) rotate(5deg); }
+            10% { transform: scale(1.5) rotate(-5deg); }
+            15% { transform: scale(1.5) rotate(5deg); }
+            20% { transform: scale(1.5) rotate(-5deg); }
+            25% { transform: scale(1.5) rotate(0deg); }
+            50% { transform: scale(1.5); }
+            100% { transform: scale(1); }
+        }
+
+        .high-score-display {
+            position: absolute;
+            top: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ef4444;
+            z-index: 15;
+            pointer-events: none;
+        }
+
+        .score-area {
+            display: grid;
+            grid-template-rows: 1fr 1fr;
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background-color: transparent;
+            gap: 4px;
+        }
+        .score-area .top, .score-area .bottom {
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .score-area.player-1 .top {
+             background-color: #fce303;
+        }
+        .score-area.player-1 .bottom {
+            background-color: #fce303;
+        }
+        .score-area.player-2 .top {
+            background-color: #fff;
+        }
+        .score-area.player-2 .bottom {
+            background-color: #fff;
+        }
+        .score-area .top:active, .score-area .bottom:active {
+            transform: scale(0.98);
+        }
+        .button-container {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            width: 100%;
+            margin-top: 1rem;
+        }
+        @media (min-width: 600px) {
+            .button-container {
+                width: 100%;
+                max-width: 600px;
+                flex-direction: row;
+            }
+        }
+        .billiard-button {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 10px rgba(0, 0, 0, 0.4);
+            transition: transform 0.1s;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            color: #2d3748;
+        }
+        .billiard-button:active {
+            transform: scale(0.95);
+        }
+        .bg-white { background-color: #fff; }
+        .bg-yellow-400 { background-color: #facc15; }
+        .bg-red-500 { background-color: #ef4444; color: white; }
+    </style>
+</head>
+<body class="bg-[#2b6cb0] text-white">
+
+    <div class="container mx-auto">
+        <h2 id="round-counter" class="text-xl font-bold mb-4">Round: 1</h2>
+        <div class="main-content">
+            <!-- Player 1 section -->
+            <div id="player1" class="score-section w-full">
+                <div class="name-container">
+                    <input type="text" class="name-input" value="Player 1" maxlength="10">
+                </div>
+                <div class="stats-container player-1">
+                    <span class="stats wins-1">Win: 0</span>
+                    <span class="stats avg-1">AVG: 0.00</span>
+                    <span class="stats shots-1">Inn: 0</span>
+                </div>
+                <div class="score-area player-1">
+                    <span class="score-display">0</span>
+                    <div class="top" data-player="player1" data-value="1"></div>
+                    <div class="bottom" data-player="player1" data-value="-1"></div>
+                </div>
+            </div>
+
+            <!-- Player 2 section -->
+            <div id="player2" class="score-section w-full">
+                <div class="name-container">
+                    <input type="text" class="name-input" value="Player 2" maxlength="10">
+                </div>
+                <div class="stats-container player-2">
+                    <span class="stats wins-2">Win: 0</span>
+                    <span class="stats avg-2">AVG: 0.00</span>
+                    <span class="stats shots-2">Inn: 0</span>
+                </div>
+                <div class="score-area player-2">
+                    <span class="score-display">0</span>
+                    <div class="top" data-player="player2" data-value="1"></div>
+                    <div class="bottom" data-player="player2" data-value="-1"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="button-container">
+            <!-- Bi trắng - Reset All -->
+            <button id="resetBtn" class="billiard-button bg-white">Reset</button>
+            <!-- Bi đỏ - End Round -->
+            <button id="endRoundBtn" class="billiard-button bg-red-500">End</button>
+            <!-- Bi vàng - Swap Colors -->
+            <button id="swapColorsBtn" class="billiard-button bg-yellow-400">Swap</button>
+        </div>
+    </div>
+
+    <div id="messageBox"></div>
+
+    <script>
+        // Lấy các phần tử HTML
+        const endRoundBtn = document.getElementById('endRoundBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const swapColorsBtn = document.getElementById('swapColorsBtn');
+        const messageBox = document.getElementById('messageBox');
+        const roundCounter = document.getElementById('round-counter');
+        
+        // Trạng thái của ứng dụng
+        let state = {
+            player1: { score: 0, wins: 0, shots: 0, currentTurnScore: 0 },
+            player2: { score: 0, wins: 0, shots: 0, currentTurnScore: 0 },
+            rounds: 1
+        };
+
+        // Biến để theo dõi lượt đánh hiện tại
+        let currentPlayer = null;
+
+        // Hàm cập nhật trạng thái hoạt động của bảng điểm
+        function updateActivePlayerUI() {
+            const player1Section = document.getElementById('player1');
+            const player2Section = document.getElementById('player2');
+            if (currentPlayer === 'player1') {
+                player1Section.classList.add('active');
+                player2Section.classList.remove('active');
+            } else if (currentPlayer === 'player2') {
+                player2Section.classList.add('active');
+                player1Section.classList.remove('active');
+            } else {
+                player1Section.classList.remove('active');
+                player2Section.classList.remove('active');
+            }
+        }
+
+        // Hàm hiển thị thông báo
+        function showMessage(msg) {
+            messageBox.textContent = msg;
+            messageBox.style.opacity = 1;
+            setTimeout(() => {
+                messageBox.style.opacity = 0;
+            }, 2000);
+        }
+
+        // Hàm cập nhật điểm mà không có hiệu ứng
+        function updateScore(playerId, value) {
+            const playerElement = document.getElementById(playerId);
+            const scoreDisplay = playerElement.querySelector('.score-display');
+            
+            state[playerId].currentTurnScore += value;
+            
+            let newScore = state[playerId].score + value;
+            if (newScore < 0) {
+                newScore = 0;
+            }
+            state[playerId].score = newScore;
+            
+            updateAVG(playerId);
+            
+            // Cập nhật điểm ngay lập tức, bỏ qua hiệu ứng "flip"
+            scoreDisplay.textContent = state[playerId].score;
+        }
+        
+        // Hàm cập nhật AVG
+        function updateAVG(playerId) {
+            const playerElement = document.getElementById(playerId);
+            if (state[playerId].shots > 0) {
+                const avg = state[playerId].score / state[playerId].shots;
+                playerElement.querySelector(`.stats.avg-${playerId.slice(-1)}`).textContent = `AVG: ${avg.toFixed(2)}`;
+            } else {
+                 playerElement.querySelector(`.stats.avg-${playerId.slice(-1)}`).textContent = `AVG: 0.00`;
+            }
+        }
+
+        // Hàm để tạo màu ngẫu nhiên
+        function getRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+
+        // Hàm kết thúc hiệp đấu
+        function endRound() {
+            const player1Name = document.getElementById('player1').querySelector('.name-input').value;
+            const player2Name = document.getElementById('player2').querySelector('.name-input').value;
+
+            let winner = null;
+            if (state.player1.score > state.player2.score) {
+                state.player1.wins++;
+                winner = 'player1';
+            } else if (state.player2.score > state.player1.score) {
+                state.player2.wins++;
+                winner = 'player2';
+            }
+
+            document.querySelector('.stats.wins-1').textContent = `Win: ${state.player1.wins}`;
+            document.querySelector('.stats.wins-2').textContent = `Win: ${state.player2.wins}`;
+            
+            if (winner) {
+                const winnerWinsElement = document.getElementById(winner).querySelector(`.stats.wins-${winner.slice(-1)}`);
+                winnerWinsElement.classList.add('win-effect');
+                winnerWinsElement.style.color = getRandomColor();
+
+                setTimeout(() => {
+                    winnerWinsElement.classList.remove('win-effect');
+                    winnerWinsElement.style.color = '#4a5568';
+                }, 3000);
+            }
+
+            state.player1.score = 0;
+            state.player1.shots = 0;
+            state.player1.currentTurnScore = 0;
+            state.player2.score = 0;
+            state.player2.shots = 0;
+            state.player2.currentTurnScore = 0;
+            currentPlayer = null;
+            updateActivePlayerUI();
+
+            document.getElementById('player1').querySelector('.score-display').textContent = 0;
+            document.getElementById('player2').querySelector('.score-display').textContent = 0;
+            document.getElementById('player1').querySelector(`.stats.shots-1`).textContent = `Inn: 0`;
+            document.getElementById('player2').querySelector(`.stats.shots-2`).textContent = `Inn: 0`;
+            document.getElementById('player1').querySelector(`.stats.avg-1`).textContent = `AVG: 0.00`;
+            document.getElementById('player2').querySelector(`.stats.avg-2`).textContent = `AVG: 0.00`;
+            
+            state.rounds++;
+            roundCounter.textContent = `Round: ${state.rounds}`;
+        }
+
+        // Hàm đặt lại tất cả điểm và số trận thắng
+        function resetAll() {
+            state.player1.score = 0;
+            state.player1.wins = 0;
+            state.player1.shots = 0;
+            state.player1.currentTurnScore = 0;
+            state.player2.score = 0;
+            state.player2.wins = 0;
+            state.player2.shots = 0;
+            state.player2.currentTurnScore = 0;
+            state.rounds = 1;
+            currentPlayer = null;
+            updateActivePlayerUI();
+
+            const scoreSpans = document.querySelectorAll('.score-display');
+            scoreSpans.forEach(span => {
+                span.textContent = 0;
+            });
+            
+            document.querySelector('.stats.wins-1').textContent = `Win: 0`;
+            document.querySelector('.stats.shots-1').textContent = `Inn: 0`;
+            document.querySelector('.stats.wins-2').textContent = `Win: 0`;
+            document.querySelector('.stats.shots-2').textContent = `Inn: 0`;
+            document.querySelector('.stats.avg-1').textContent = `AVG: 0.00`;
+            document.querySelector('.stats.avg-2').textContent = `AVG: 0.00`;
+
+            roundCounter.textContent = `Round: 1`;
+        }
+
+        // Hàm hoán vị màu của các bảng điểm
+        function swapColors() {
+            const player1Area = document.querySelector('.score-area.player-1');
+            const player2Area = document.querySelector('.score-area.player-2');
+            
+            if (player1Area.classList.contains('player-1')) {
+                player1Area.classList.remove('player-1');
+                player1Area.classList.add('player-2');
+                player2Area.classList.remove('player-2');
+                player2Area.classList.add('player-1');
+            } else {
+                player1Area.classList.remove('player-2');
+                player1Area.classList.add('player-1');
+                player2Area.classList.remove('player-1');
+                player2Area.classList.add('player-2');
+            }
+        }
+
+        // Thêm sự kiện click cho các khu vực điểm
+        document.addEventListener('DOMContentLoaded', () => {
+            const player1Section = document.getElementById('player1');
+            const player2Section = document.getElementById('player2');
+            
+            player1Section.addEventListener('click', (event) => {
+                const playerId = event.currentTarget.id;
+                const value = parseInt(event.target.dataset.value);
+
+                if (playerId !== currentPlayer) {
+                    currentPlayer = playerId;
+                    updateActivePlayerUI();
+                    state[playerId].shots++;
+                    document.getElementById(playerId).querySelector(`.stats.shots-${playerId.slice(-1)}`).textContent = `Inn: ${state[playerId].shots}`;
+                    updateAVG(playerId);
+                    state[playerId].currentTurnScore = 0;
+                } else if (!isNaN(value)) {
+                    updateScore(playerId, value);
+                }
+            });
+
+            player2Section.addEventListener('click', (event) => {
+                const playerId = event.currentTarget.id;
+                const value = parseInt(event.target.dataset.value);
+
+                if (playerId !== currentPlayer) {
+                    currentPlayer = playerId;
+                    updateActivePlayerUI();
+                    state[playerId].shots++;
+                    document.getElementById(playerId).querySelector(`.stats.shots-${playerId.slice(-1)}`).textContent = `Inn: ${state[playerId].shots}`;
+                    updateAVG(playerId);
+                    state[playerId].currentTurnScore = 0;
+                } else if (!isNaN(value)) {
+                    updateScore(playerId, value);
+                }
+            });
+
+            // Thêm sự kiện click cho các nút
+            endRoundBtn.addEventListener('click', endRound);
+            resetBtn.addEventListener('click', resetAll);
+            swapColorsBtn.addEventListener('click', swapColors);
+
+            // Cập nhật trạng thái UI ban đầu
+            updateActivePlayerUI();
+        });
+    </script>
+</body>
+</html>
